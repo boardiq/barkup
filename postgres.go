@@ -18,6 +18,8 @@ type Postgres struct {
   DB string
   // Connection Username
   Username string
+  // Connection Password
+  Password string
   // Extra pg_dump options
   // e.g []string{"--inserts"}
   Options []string
@@ -28,7 +30,11 @@ func (x Postgres) Export() (*ExportResult) {
   result := &ExportResult{MIME: "application/x-tar"}
   result.Path = fmt.Sprintf(`bu_%v_%v.sql.tar.gz`, x.DB, time.Now().Unix())
   options := append(x.dumpOptions(), "-Fc", fmt.Sprintf(`-f%v`, result.Path))
-  _, err := exec.Command(pgDumpCmd, options...).Output()
+  cmd := exec.Command(pgDumpCmd, options...)
+	if x.Password != "" {
+		cmd.Env = []string{"PGPASSWORD=" + x.Password}
+	}
+	_, err := cmd.Output()
   result.Error = err
   return result
 }
